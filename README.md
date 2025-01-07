@@ -33,7 +33,10 @@ The SSE2 implementation is closest, only being a few % slower for longer hashes.
 
 ### Benchmark results
 
-[Note that the times are for 1k-10m iterations depending on input length, so do not try to compare the times between different lengths]
+Notes on the results:
+
+- Times are for 1k-10m iterations depending on input length, so do not try to compare the times between different lengths. The same input lengths can however be compared between modes.
+- Vector modes do nothing for very small inputs (and these results should probably be removed for clarity).
 
 XXH3-64bit **[Scalar]**:
 
