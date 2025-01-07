@@ -176,7 +176,8 @@ XXH3_f_initCustomSecret :: #type(*void , u64) #no_context;
     XXH3_initCustomSecret :: XXH3_initCustomSecret_scalar;
 } else #if VECTOR_MODE == .AVX2 {
     XXH3_scrambleAcc :: XXH3_scrambleAcc_avx2;
-    XXH3_accumulate_512 :: XXH3_accumulate_512_avx2;
+    // AVX2 only benefits when processing more than 1 chunk - see later comments and just use SSE2 implementation
+    XXH3_accumulate_512 :: XXH3_accumulate_512_sse2;
     XXH3_initCustomSecret :: XXH3_initCustomSecret_scalar;
 }
 
@@ -309,43 +310,78 @@ XXH3_accumulate_512_sse2 :: inline (acc: *void, input: *void, secret: *void) #no
     }
 }
 
-XXH3_accumulate_512_avx2 :: inline (acc: *void, input: *void, secret: *void) #no_context
+// This version actually processes two of the usual chunks to utilise AVX2,
+// for a single chunk just fall back to SSE2.
+XXH3_accumulate_512_avx2_two :: inline (acc: *void, input: *void, secret: *void) #no_context
 {
     #asm AVX, AVX2 {
-        movdqu ymm0:, [input];
-        pxor ymm1:, ymm0, [secret];
-        pshufd ymm2:, ymm1, 245;
-        pmuludq ymm1, ymm2, ymm1;
-        pshufd ymm0, ymm0, 78;
-        paddq ymm0, ymm0, [acc];
-        paddq  ymm0, ymm0, ymm1;
-        movdqu [acc], ymm0;
-        movdqu ymm0, [input + 32];
-        pxor ymm1, ymm0, [secret + 32];
-        pshufd ymm2, ymm1, 245;
-        pmuludq ymm1, ymm2, ymm1;
-        pshufd ymm0, ymm0, 78;
-        paddq ymm0, ymm0, [acc + 32];
-        paddq  ymm0, ymm0, ymm1;
-        movdqu [acc + 32], ymm0;
+        movdqu  ymm0:, [input];
+        movdqu  ymm1:, [input + 32];
+        movdqu  ymm2:, [input + 64];
+        pxor    ymm3:, ymm0, [secret];
+        psrlq   ymm4:, ymm3, 32;
+        pshufd  ymm0, ymm0, 78;
+        paddq   ymm0, ymm0, [acc];
+        pmuludq ymm3, ymm3, ymm4;
+        pxor    ymm4, ymm1, [secret + 32];
+        psrlq   ymm5:, ymm4, 32;
+        pmuludq ymm4, ymm4, ymm5;
+        pshufd  ymm1, ymm1, 78;
+        paddq   ymm1, ymm1, [acc + 32];
+        pxor    ymm5, ymm2, [secret + 8];
+        psrlq   ymm6:, ymm5, 32;
+        pmuludq ymm5, ymm5, ymm6;
+        pshufd  ymm2, ymm2, 78;
+        paddq   ymm2, ymm3, ymm2;
+        paddq   ymm0, ymm0, ymm2;
+        paddq   ymm0, ymm0, ymm5;
+        movdqa  [acc], ymm0;
+        movdqu  ymm0, [input + 96];
+        pxor    ymm2, ymm0, [secret + 40];
+        psrlq   ymm3, ymm2, 32;
+        pmuludq ymm2, ymm2, ymm3;
+        pshufd  ymm0, ymm0, 78;
+        paddq   ymm0, ymm4, ymm0;
+        paddq   ymm0, ymm1, ymm0;
+        paddq   ymm0, ymm0, ymm2;
+        movdqa  [acc + 32], ymm0;
         zeroupper;
     }
 }
 
 XXH3_accumulate :: inline (acc: *u64, input: *u8, secret: *u8, nbStripes: u64) #no_context
 {
-    for n: 0 .. c_cast(s64, nbStripes) - 1 {
-        in := input + n * XXH_STRIPE_LEN;
-        // Doesn't seem to help, so leaving commented
-        // #asm {
-        //     prefetcht0 [in + XXH_PREFETCH_DIST];
-        // }
-        #if VECTOR_MODE == .Scalar {
+    #if VECTOR_MODE == .Scalar {
+        for n: 0 .. c_cast(s64, nbStripes) - 1 {
+            in := input + n * XXH_STRIPE_LEN;
             XXH3_accumulate_512_scalar(acc, in, secret + n * XXH_SECRET_CONSUME_RATE);
-        } else #if VECTOR_MODE == .SSE2 {
+        }
+    } else #if VECTOR_MODE == .SSE2 {
+        for n: 0 .. c_cast(s64, nbStripes) - 1 {
+            in := input + n * XXH_STRIPE_LEN;
+            #asm {
+                prefetcht0 [in + XXH_PREFETCH_DIST];
+            }
             XXH3_accumulate_512_sse2(acc, in, secret + n * XXH_SECRET_CONSUME_RATE);
-        } else #if VECTOR_MODE == .AVX2 {
-            XXH3_accumulate_512_avx2(acc, in, secret + n * XXH_SECRET_CONSUME_RATE);
+        }
+    } else #if VECTOR_MODE == .AVX2 {
+        n := 0;
+        limit := c_cast(s64, nbStripes);
+        even_limit := limit & ~1;
+        while n < even_limit {
+            in := input + n * XXH_STRIPE_LEN;
+            #asm {
+                prefetcht0 [in + XXH_PREFETCH_DIST];
+            }
+            XXH3_accumulate_512_avx2_two(acc, in, secret + n * XXH_SECRET_CONSUME_RATE);
+            n += 2;
+        }
+        if n < limit {
+            in := input + n * XXH_STRIPE_LEN;
+            #asm {
+                prefetcht0 [in + XXH_PREFETCH_DIST];
+            }
+            XXH3_accumulate_512_sse2(acc, in, secret + n * XXH_SECRET_CONSUME_RATE);
         }
     }
 }

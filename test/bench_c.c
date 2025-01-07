@@ -3,14 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+
 #ifdef _MSC_VER
 #include "Windows.h"
 #else
 #include <time.h>
 #endif
-
-#define str(v) #v
-#define str2(v) str(v)
 
 #ifdef _MSC_VER
 static uint64_t timer_get_raw_ticks(void)
@@ -58,7 +56,7 @@ static uint64_t timer_get_raw_ticks(void)
 static float timer_get_elapsed_ms(uint64_t start)
 {
     uint64_t now = timer_get_raw_ticks();
-    float ms = (float)((now - start) / 1e6);
+    float ms = ((float)(now - start)) / 1e6;
     return ms;
 }
 
