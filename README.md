@@ -36,6 +36,8 @@ The SSE2 implementation is closest, only being a few % slower for longer hashes.
 
 ### Benchmark results
 
+[Note iteration count is not equal between lengths, so they should not be comparsed against eachother]
+
 XXH3-64bit **[Scalar]**:
 
 | Length | jai-xxh3 (ms) | xxhash (ms) | Multiple |
