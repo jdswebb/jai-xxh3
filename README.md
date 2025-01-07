@@ -31,7 +31,7 @@ The C implementation uses many clever tricks to squeeze out every bit of perform
 
 The SSE2 implementation is closest, only being a few % slower for longer hashes. There are some outlier bad performers to investigate:
 
-- Small hash lengths, particular 100b, are performing considerably worse.
+- Small hash lengths, particularly 100b, are performing considerably worse.
 - AVX2 is performing slightly worse than SSE2 (!) - it should be roughly twice as fast instead.
 
 ### Benchmark results
