@@ -14,8 +14,8 @@ main :: ()
     match &= equal(c_results, jai_avx2_results);
     
     if (match) {
-        print("SUCCESS: All test results match the C reference values");
+        print("SUCCESS: All test results match the C reference values\n");
     } else {
-        print("FAIL: Not all test results match the C reference values");
+        print("FAIL: Not all test results match the C reference values\n");
     }
 }
