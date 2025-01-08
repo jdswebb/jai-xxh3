@@ -5,22 +5,22 @@
 // This whole process is fairly rudimentary for now and not very flexible.
 
 INPUT_LENGTHS :: string.[ 
-    "test_1b",
-    "test_4b",
-    "test_9b",
-    "test_10b",
-    "test_17b",
-    "test_32b",
-    "test_33b",
-    "test_64b",
-    "test_65b",
-    "test_100b",
-    "test_250b",
-    "test_1kb",
-    "test_10kb",
-    "test_100kb",
-    "test_1mb",
-    "test_10mb"
+    "1b",
+    "4b",
+    "9b",
+    "10b",
+    "17b",
+    "32b",
+    "33b",
+    "64b",
+    "65b",
+    "100b",
+    "250b",
+    "1kb",
+    "10kb",
+    "100kb",
+    "1mb",
+    "10mb"
     ];
 
 tabulate :: (file_out: *File, name: string, jai_results: []string, c_results: [] string)
