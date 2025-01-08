@@ -6,7 +6,7 @@ bench_xxh3 :: (file: string, N: u64, file_out: *File)
     
     print("Benchmark: %\n",  file);
     
-    repeats :: 10;
+    repeats :: 2;
     
     sum : u64 = 0;
     avg : float64 = 0;
@@ -44,14 +44,22 @@ main :: ()
     assert(success);
     defer file_close(*file);
     
-    bench_xxh3("data/test_1b", 10000000, *file);
-    bench_xxh3("data/test_10b", 10000000, *file);
-    bench_xxh3("data/test_100b", 1000000, *file);
-    bench_xxh3("data/test_1kb", 1000000, *file);
-    bench_xxh3("data/test_10kb", 100000, *file);
-    bench_xxh3("data/test_100kb", 10000, *file);
-    bench_xxh3("data/test_1mb", 10000, *file);
-    bench_xxh3("data/test_10mb", 1000, *file);
+    bench_xxh3("data/test_1b",    10000000, *file);
+    bench_xxh3("data/test_4b",    10000000, *file);
+    bench_xxh3("data/test_9b",    10000000, *file);
+    bench_xxh3("data/test_10b",   10000000, *file);
+    bench_xxh3("data/test_17b",   10000000, *file);
+    bench_xxh3("data/test_32b",   10000000, *file);
+    bench_xxh3("data/test_33b",   10000000, *file);
+    bench_xxh3("data/test_64b",   10000000, *file);
+    bench_xxh3("data/test_65b",   10000000, *file);
+    bench_xxh3("data/test_100b",  10000000, *file);
+    bench_xxh3("data/test_250b",  10000000, *file);
+    bench_xxh3("data/test_1kb",   10000000, *file);
+    bench_xxh3("data/test_10kb",  1000000,  *file);
+    bench_xxh3("data/test_100kb", 100000,   *file);
+    bench_xxh3("data/test_1mb",   10000,    *file);
+    bench_xxh3("data/test_10mb",  1000,     *file);
 }
 
 #import "Basic";

@@ -74,7 +74,7 @@ void bench_xxh3(const char *file, uint64_t N, FILE *f_out)
     fclose(f);
     
     printf("Benchmark: %s\n", file);
-    static const size_t repeats = 10;
+    static const size_t repeats = 2;
     
     // volatile to prevent the inner loop being turned into a multiply :)
     volatile uint64_t sum = 0;
@@ -116,13 +116,21 @@ int main(int argc, char** argv)
         file_name = "results/bench_data_c_avx2.txt";
     }
     FILE *f = fopen(file_name, "wb");
-    bench_xxh3("data/test_1b", 10000000, f);
-    bench_xxh3("data/test_10b", 10000000, f);
-    bench_xxh3("data/test_100b", 1000000, f);
-    bench_xxh3("data/test_1kb", 1000000, f);
-    bench_xxh3("data/test_10kb", 100000, f);
-    bench_xxh3("data/test_100kb", 10000, f);
-    bench_xxh3("data/test_1mb", 10000, f);
-    bench_xxh3("data/test_10mb", 1000, f);
+    bench_xxh3("data/test_1b",    10000000, f);
+    bench_xxh3("data/test_4b",    10000000, f);
+    bench_xxh3("data/test_9b",    10000000, f);
+    bench_xxh3("data/test_10b",   10000000, f);
+    bench_xxh3("data/test_17b",   10000000, f);
+    bench_xxh3("data/test_32b",   10000000, f);
+    bench_xxh3("data/test_33b",   10000000, f);
+    bench_xxh3("data/test_64b",   10000000, f);
+    bench_xxh3("data/test_65b",   10000000, f);
+    bench_xxh3("data/test_100b",  10000000, f);
+    bench_xxh3("data/test_250b",  10000000, f);
+    bench_xxh3("data/test_1kb",   10000000, f);
+    bench_xxh3("data/test_10kb",  1000000,  f);
+    bench_xxh3("data/test_100kb", 100000,   f);
+    bench_xxh3("data/test_1mb",   10000,    f);
+    bench_xxh3("data/test_10mb",  1000,     f);
     fclose(f);
 }

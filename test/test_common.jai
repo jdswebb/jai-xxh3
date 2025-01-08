@@ -36,8 +36,16 @@ run_xxh3_test :: (file: string)
 main :: ()
 {
     run_xxh3_test("data/test_1b");
+    run_xxh3_test("data/test_4b");
+    run_xxh3_test("data/test_9b");
     run_xxh3_test("data/test_10b");
+    run_xxh3_test("data/test_17b");
+    run_xxh3_test("data/test_32b");
+    run_xxh3_test("data/test_33b");
+    run_xxh3_test("data/test_64b");
+    run_xxh3_test("data/test_65b");
     run_xxh3_test("data/test_100b");
+    run_xxh3_test("data/test_250b");
     run_xxh3_test("data/test_1kb");
     run_xxh3_test("data/test_10kb");
     run_xxh3_test("data/test_100kb");
