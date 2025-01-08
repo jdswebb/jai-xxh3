@@ -474,21 +474,36 @@ XXH3_scrambleAcc_avx2 :: inline (acc: *void, secret: *void) #no_context
     }
 }
 
-XXH_mult64to128 :: (lhs: u64, rhs: u64) -> XXH128_hash #no_context
+// XXH_mult64to128 :: (lhs: u64, rhs: u64) -> XXH128_hash #no_context
+// {
+//     lo_lo := XXH_mult32to64(lhs & 0xFFFFFFFF, rhs & 0xFFFFFFFF);
+//     hi_lo := XXH_mult32to64(lhs >> 32,        rhs & 0xFFFFFFFF);
+//     lo_hi := XXH_mult32to64(lhs & 0xFFFFFFFF, rhs >> 32);
+//     hi_hi := XXH_mult32to64(lhs >> 32,        rhs >> 32);
+// 
+//     cross := (lo_lo >> 32) + (hi_lo & 0xFFFFFFFF) + lo_hi;
+//     upper := (hi_lo >> 32) + (cross >> 32)        + hi_hi;
+//     lower := (cross << 32) | (lo_lo & 0xFFFFFFFF);
+// 
+//     r128: XXH128_hash = ---;
+//     r128.low64  = lower;
+//     r128.high64 = upper;
+//     return r128;
+// }
+
+// @Experimental version - seems to be working but the
+// mulx args were confusing
+XXH_mult64to128 :: (lhs: u64, rhs: u64) -> XXH128_hash #c_call
 {
-    lo_lo := XXH_mult32to64(lhs & 0xFFFFFFFF, rhs & 0xFFFFFFFF);
-    hi_lo := XXH_mult32to64(lhs >> 32,        rhs & 0xFFFFFFFF);
-    lo_hi := XXH_mult32to64(lhs & 0xFFFFFFFF, rhs >> 32);
-    hi_hi := XXH_mult32to64(lhs >> 32,        rhs >> 32);
-
-    cross := (lo_lo >> 32) + (hi_lo & 0xFFFFFFFF) + lo_hi;
-    upper := (hi_lo >> 32) + (cross >> 32)        + hi_hi;
-    lower := (cross << 32) | (lo_lo & 0xFFFFFFFF);
-
-    r128: XXH128_hash = ---;
-    r128.low64  = lower;
-    r128.high64 = upper;
-    return r128;
+    r1: u64 = ---;
+    r2: u64 = ---;
+    rdx: u64 = 0;
+    #asm {
+        rdx === d;
+        mov.64     rdx, rhs;
+        mulx.64    r1, r2, lhs, rdx;
+    }
+    return XXH128_hash.{r2,r1};
 }
 
 XXH3_mul128_fold64 :: (lhs: u64, rhs: u64) -> u64 #no_context
@@ -511,7 +526,7 @@ XXH3_mix16B :: inline (input: *u8, secret: *u8, seed64: u64) -> u64 #no_context
     return XXH3_mul128_fold64(
         input_lo ^ (XXH_readLE64(secret)   + seed64),
         input_hi ^ (XXH_readLE64(secret+8) - seed64)
-    );    
+    );
 }
 
 XXH3_avalanche :: (h64: u64) -> XXH64_hash #no_context
@@ -850,7 +865,7 @@ XXH3_len_0to16_128b :: inline (input: *u8, len: u64, secret: *u8, seed: XXH64_ha
     bitflipl: u64 = XXH_readLE64(secret+64) ^ XXH_readLE64(secret+72);
     bitfliph: u64 = XXH_readLE64(secret+80) ^ XXH_readLE64(secret+88);
     h128.low64 = XXH64_avalanche(seed ^ bitflipl);
-    h128.high64 = XXH64_avalanche( seed ^ bitfliph);
+    h128.high64 = XXH64_avalanche(seed ^ bitfliph);
     return h128;
 }
 
@@ -971,14 +986,13 @@ XXH3_hashLong_128b_default :: no_inline (input: *void, len: u64, seed64: XXH64_h
     return XXH3_hashLong_128b_internal(input, len, XXH3_kSecret.data, size_of(type_of(XXH3_kSecret)), XXH3_accumulate, XXH3_scrambleAcc);
 }
 
-XXH3_hashLong_128b_withSecret :: inline(input: *void, len: u64, seed64: XXH64_hash,
+XXH3_hashLong_128b_withSecret :: inline (input: *void, len: u64, seed64: XXH64_hash,
                               secret: *void, secretLen: u64) -> XXH128_hash #no_context
 {
     return XXH3_hashLong_128b_internal(input, len, c_cast(*u8, secret), secretLen, XXH3_accumulate, XXH3_scrambleAcc);
 }
 
-XXH3_hashLong_128b_withSeed_internal :: inline(input: *void, len: u64,
-                                seed64: XXH64_hash,
+XXH3_hashLong_128b_withSeed_internal :: inline (input: *void, len: u64, seed64: XXH64_hash,
                                 f_acc: XXH3_f_accumulate,
                                 f_scramble: XXH3_f_scrambleAcc,
                                 f_initSec: XXH3_f_initCustomSecret) -> XXH128_hash #no_context
